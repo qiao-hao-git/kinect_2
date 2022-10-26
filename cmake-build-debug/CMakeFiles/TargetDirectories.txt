@@ -1,0 +1,3 @@
+/home/q/下载/My_Kinect/cmake-build-debug/CMakeFiles/run.dir
+/home/q/下载/My_Kinect/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/q/下载/My_Kinect/cmake-build-debug/CMakeFiles/rebuild_cache.dir
