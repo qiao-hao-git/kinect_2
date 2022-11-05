@@ -177,6 +177,33 @@ src/K4a_Grabber.cpp.s:
 	$(MAKE) -f CMakeFiles/run.dir/build.make CMakeFiles/run.dir/src/K4a_Grabber.cpp.s
 .PHONY : src/K4a_Grabber.cpp.s
 
+src/rotate_cloud.o: src/rotate_cloud.cpp.o
+
+.PHONY : src/rotate_cloud.o
+
+# target to build an object file
+src/rotate_cloud.cpp.o:
+	$(MAKE) -f CMakeFiles/run.dir/build.make CMakeFiles/run.dir/src/rotate_cloud.cpp.o
+.PHONY : src/rotate_cloud.cpp.o
+
+src/rotate_cloud.i: src/rotate_cloud.cpp.i
+
+.PHONY : src/rotate_cloud.i
+
+# target to preprocess a source file
+src/rotate_cloud.cpp.i:
+	$(MAKE) -f CMakeFiles/run.dir/build.make CMakeFiles/run.dir/src/rotate_cloud.cpp.i
+.PHONY : src/rotate_cloud.cpp.i
+
+src/rotate_cloud.s: src/rotate_cloud.cpp.s
+
+.PHONY : src/rotate_cloud.s
+
+# target to generate assembly for a file
+src/rotate_cloud.cpp.s:
+	$(MAKE) -f CMakeFiles/run.dir/build.make CMakeFiles/run.dir/src/rotate_cloud.cpp.s
+.PHONY : src/rotate_cloud.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -192,6 +219,9 @@ help:
 	@echo "... src/K4a_Grabber.o"
 	@echo "... src/K4a_Grabber.i"
 	@echo "... src/K4a_Grabber.s"
+	@echo "... src/rotate_cloud.o"
+	@echo "... src/rotate_cloud.i"
+	@echo "... src/rotate_cloud.s"
 .PHONY : help
 
 

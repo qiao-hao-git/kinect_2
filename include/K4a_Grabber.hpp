@@ -1,12 +1,20 @@
 #ifndef K4A_GRABBER_HPP
 #define K4A_GRABBER_HPP
 
+#include <k4a/k4a.h>
 #include <k4a/k4a.hpp>
+#include <k4a/k4atypes.h>
+#include <k4arecord/record.h>
+
 
 #include <opencv2/opencv.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl/kdtree/kdtree_flann.h>
+
 
 #include <pthread.h>
 
@@ -28,7 +36,9 @@ private:
     k4a::calibration calibration;
     k4a::transformation transformation;
 
+
 public:
+    k4a::image depth_image;
     void init(); // 初始化KinectAzureDK相机
 
     void close(); // 关闭KinectAzureDK相机
@@ -58,6 +68,13 @@ private:
 
 public:
 
+
+    struct Classes
+    {
+        pcl::PointXYZ center;           // 该类的中心
+        std::vector<pcl::PointXYZ> points;   // 该类的所有点云
+    };
+
     /**
      * @brief 获取Kinect相机图像
      * 
@@ -65,15 +82,24 @@ public:
      * 
      * @return std::vector<cv::Mat> pictures 表示获取到的图像； pictures[0] 彩色图像； pictures[1] 深度图像； pictures[2] 红外线图像
     */
-    std::vector<cv::Mat> getImg(uint8_t timeout_ms = 100); 
+    std::vector<cv::Mat> getImg(uint8_t timeout_ms, k4a::image &depthImage_k4a);
+//    void get_distance(std::vector<cv::Mat> &pictures, std::vector<float> &distance); // 获取距离图像
 
     /**
-     * @brief 获取快速PointXYZ点云，无序
-     * 
-     * @param timeout_ms 超时时间
-     * 
-     * @return 快速PointXYZ点云，无序
-     */
+    * @brief 颜色提取
+    *
+    */
+    void color_extract(std::vector<cv::Mat> &pictures);
+
+
+    /**
+    * @brief 获取快速PointXYZ点云，无序
+    *
+    * @param timeout_ms 超时时间
+    *
+    * @return 快速PointXYZ点云，无序
+    */
+
     pcl::PointCloud<pcl::PointXYZ>::Ptr getFastPointXYZ(uint8_t timeout_ms = 100);
 
     /**
@@ -83,8 +109,13 @@ public:
      * 
      * @return PointXYZ点云
      */
-    pcl::PointCloud<pcl::PointXYZ>::Ptr getPointXYZ(uint8_t timeout_ms = 100);
 
+    pcl::PointCloud<pcl::PointXYZ>::Ptr getPointXYZ(uint8_t timeout_ms = 100);
+    /**
+     * @brief 聚类
+     * @return PointXYZ点云
+     */
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr dbscan(pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud_in, std::vector<Classes> &now_classes);
     /**
      * @brief 获取PointXYZRGB点云
      * 
@@ -126,6 +157,8 @@ public:
      * @return 相机捕获线程是否在工作
      */
     bool is_Thread_Capture_Working();
+
+
 
 /***********************获取图片/点云***********************/
 

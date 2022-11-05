@@ -28,7 +28,9 @@ void K4a_Grabber::init()
     // 设置Kinect的相机帧率为30FPS
     init_params.camera_fps = K4A_FRAMES_PER_SECOND_30;
     // 设置Kinect的深度模式为Near FOV unbinned（这一代 Kinect 支持多种深度模式，官方文档推荐使用 K4A_DEPTH_MODE_NFOV_UNBINNED 和 K4A_DEPTH_MODE_WFOV_2X2BINNED 这两种深度模式）
-	init_params.depth_mode = K4A_DEPTH_MODE_NFOV_2X2BINNED;
+//	init_params.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
+    init_params.depth_mode = K4A_DEPTH_MODE_WFOV_2X2BINNED;
+
 	// 设置Kinect的颜色属性为BGRA32
 	init_params.color_format = K4A_IMAGE_FORMAT_COLOR_BGRA32;
     //为了同时获取depth和color图，保持这两种图像是同步的
@@ -167,6 +169,7 @@ void K4a_Grabber::KinectAzureDK_Source_Grabber(k4a::image &colorImage_k4a, k4a::
             return ;
         }
 
+
         colorImage_k4a = capture.get_color_image();
         if(colorImage_k4a == nullptr)
             printf("Failed To Get Color Image From Kinect!\n");
@@ -178,6 +181,16 @@ void K4a_Grabber::KinectAzureDK_Source_Grabber(k4a::image &colorImage_k4a, k4a::
         infraredImage_k4a = capture.get_ir_image();
         if(infraredImage_k4a == nullptr)
             printf("Failed To Get IR Image From Kinect!\n");
+
+        k4a::device device = k4a::device::open(K4A_DEVICE_DEFAULT);
+
+        k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
+        k4a::calibration Calibration = device.get_calibration(config.depth_mode, config.color_resolution);
+        k4a::transformation Transformation = k4a::transformation(Calibration);
+        k4a::image transformed_depth_image = nullptr;
+        transformed_depth_image = Transformation.depth_image_to_color_camera(depthImage_k4a);
+        colorImage_k4a = transformed_depth_image;
+
     }
 }
 
@@ -188,14 +201,23 @@ void K4a_Grabber::KinectAzureDK_Source_Grabber(k4a::image &colorImage_k4a, k4a::
  * 
  * @return std::vector<cv::Mat> pictures 表示获取到的图像； pictures[0] 彩色图像； pictures[1] 深度图像； pictures[2] 红外线图像
 */
-std::vector<cv::Mat> K4a_Grabber::getImg(uint8_t timeout_ms)
+std::vector<cv::Mat> K4a_Grabber::getImg(uint8_t timeout_ms, k4a::image &depthImage_k4a)
 {
     cv::Mat colorImage_ocv, depthImage_ocv, infraredImage_ocv;
 
     // 获取相机原始数据
-    k4a::image colorImage_k4a = nullptr, depthImage_k4a = nullptr, infraredImage_k4a = nullptr;
+//    k4a::image colorImage_k4a = nullptr, depthImage_k4a = nullptr, infraredImage_k4a = nullptr;
+    k4a::image colorImage_k4a = nullptr, infraredImage_k4a = nullptr;
     KinectAzureDK_Source_Grabber(colorImage_k4a, depthImage_k4a, infraredImage_k4a, timeout_ms, Img);
 
+//    for(int i = 0; i < depthImage_k4a.get_width_pixels(); i++)
+//    {
+//        for(int j = 0; j < depthImage_k4a.get_height_pixels(); j++)
+//        {
+//            uint16_t depth = depthImage_k4a.get_buffer()[i * depthImage_k4a.get_height_pixels() + j];
+//            printf("depth: %d\n", depth);
+//        }
+//    }
     // 数据格式转换
     if(colorImage_k4a != nullptr)
     {
@@ -206,12 +228,14 @@ std::vector<cv::Mat> K4a_Grabber::getImg(uint8_t timeout_ms)
     if(depthImage_k4a != nullptr)
     {
         depthImage_ocv = cv::Mat(depthImage_k4a.get_height_pixels(), depthImage_k4a.get_width_pixels(), CV_8UC4, depthImage_k4a.get_buffer());
-        depthImage_ocv.convertTo(depthImage_ocv, CV_8U, 1);
+        depthImage_ocv.convertTo(depthImage_ocv, CV_16U, 1);
+
     }
 
     if(infraredImage_k4a != nullptr)
     {
         infraredImage_ocv = cv::Mat(infraredImage_k4a.get_height_pixels(), infraredImage_k4a.get_width_pixels(), CV_8UC4, infraredImage_k4a.get_buffer());
+        infraredImage_ocv.convertTo(infraredImage_ocv, CV_8U, 1);
     }
 
     std::vector<cv::Mat> pictures;
@@ -221,6 +245,21 @@ std::vector<cv::Mat> K4a_Grabber::getImg(uint8_t timeout_ms)
 
     return pictures;
 }
+
+/*颜色提取*/
+void K4a_Grabber::color_extract(std::vector<cv::Mat> &pictures)
+{
+    cv::Mat hsv;
+    cv::cvtColor(pictures[0], hsv, cv::COLOR_BGR2HSV);
+    cv::Mat mask;
+    cv::Scalar lower_withe(0, 0, 50);
+    cv::Scalar upper_withe(180,30, 255);
+    cv::inRange(hsv, lower_withe, upper_withe, mask);
+    cv::Mat dst;
+    cv::bitwise_and(pictures[0], pictures[0], dst, mask);
+    pictures[0] = dst;
+}
+
 
 /**
  * @brief 获取快速PointXYZ点云，无序
@@ -293,6 +332,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr K4a_Grabber::getFastPointXYZ(uint8_t timeout
 
     return cloud;
 }
+
 
 /**
  * @brief 获取PointXYZ点云
@@ -371,7 +411,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr K4a_Grabber::getPointXYZRGB(uint8_t timeo
 
     // 数据格式转换
 
-    int width = colorImage_k4a.get_width_pixels();;
+    int width = colorImage_k4a.get_width_pixels();
     int height = colorImage_k4a.get_height_pixels();
 
     cloud->width = width;
@@ -408,6 +448,96 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr K4a_Grabber::getPointXYZRGB(uint8_t timeo
     }
 
     return cloud;
+}
+
+/*聚类*/
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr K4a_Grabber::dbscan(pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud_in, std::vector<Classes> &now_classes)
+{
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr visual_cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::KdTreeFLANN<pcl::PointXYZ> tree;
+    tree.setInputCloud(cloud_in);
+    std::vector<bool> cloud_processed(cloud_in->size(), false);
+    std::vector<std::vector<int>> clusters_index;
+    double r=0.5;
+    int size=2;
+
+    for (size_t i = 0; i < cloud_in->points.size(); ++i)
+    {
+        if (cloud_processed[i])
+        {
+            continue;
+        }
+
+        std::vector<int>seed_queue;
+        //检查近邻数是否大于给定的size（判断是否是核心对象）
+        std::vector<int> indices_cloud;
+        std::vector<float> dists_cloud;
+        if (tree.radiusSearch(cloud_in->points[i], r, indices_cloud, dists_cloud) >= size)
+        {
+            seed_queue.push_back(i);
+            cloud_processed[i] = true;
+        }
+        else
+        {
+            //cloud_processed[i] = true;
+            continue;
+        }
+
+        int seed_index = 0;
+        while (seed_index < seed_queue.size())
+        {
+            std::vector<int> indices;
+            std::vector<float> dists;
+            if (tree.radiusSearch(cloud_in->points[seed_queue[seed_index]], r, indices, dists) < size)//函数返回值为近邻数量
+            {
+                ++seed_index;
+                continue;
+            }
+            for (size_t j = 0; j < indices.size(); ++j)
+            {
+                if (cloud_processed[indices[j]])
+                {
+                    continue;
+                }
+                seed_queue.push_back(indices[j]);
+                cloud_processed[indices[j]] = true;
+            }
+            ++seed_index;
+        }
+        clusters_index.push_back(seed_queue);
+
+    }
+
+    visual_cloud->width = cloud_in->size();
+    visual_cloud->height = 1;
+    visual_cloud->resize(cloud_in->size());
+
+    now_classes.resize(clusters_index.size());
+    for (size_t i = 0; i < clusters_index.size(); ++i)
+    {
+        //int R = rand()%255, G = rand()%255, B = rand()%255;
+        float sumx=0,sumy=0;
+        now_classes[i].points.resize(clusters_index[i].size());
+        for (size_t j = 0; j < clusters_index[i].size(); ++j)
+        {
+            pcl::PointXYZ p;
+            visual_cloud->points[clusters_index[i][j]].x = cloud_in->points[clusters_index[i][j]].x;
+            visual_cloud->points[clusters_index[i][j]].y = cloud_in->points[clusters_index[i][j]].y;
+            visual_cloud->points[clusters_index[i][j]].z = cloud_in->points[clusters_index[i][j]].z;
+            visual_cloud->points[clusters_index[i][j]].r=255;
+            visual_cloud->points[clusters_index[i][j]].g=255;
+            visual_cloud->points[clusters_index[i][j]].b=255;
+
+            sumx+=cloud_in->points[clusters_index[i][j]].x;
+            sumy+=cloud_in->points[clusters_index[i][j]].y;
+            p.x = cloud_in->points[clusters_index[i][j]].x, p.y = cloud_in->points[clusters_index[i][j]].y, p.z = 0;
+            now_classes[i].points[j] = p;
+        }
+        sumx /= clusters_index[i].size(), sumy /= clusters_index[i].size();
+        now_classes[i].center.x = sumx, now_classes[i].center.y = sumy, now_classes[i].center.z = 0;
+    }
+
+    return visual_cloud;
 }
 
 /**
@@ -550,3 +680,5 @@ double K4a_Grabber::cal_Diff_Time_ms(timeval first_time, timeval second_time)
         diff_time_ms *= -1.0;
     return diff_time_ms;
 }
+
+

@@ -6,6 +6,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 set(CMAKE_DEPENDS_CHECK_CXX
   "/home/q/下载/My_Kinect/main.cpp" "/home/q/下载/My_Kinect/build/CMakeFiles/run.dir/main.cpp.o"
   "/home/q/下载/My_Kinect/src/K4a_Grabber.cpp" "/home/q/下载/My_Kinect/build/CMakeFiles/run.dir/src/K4a_Grabber.cpp.o"
+  "/home/q/下载/My_Kinect/src/rotate_cloud.cpp" "/home/q/下载/My_Kinect/build/CMakeFiles/run.dir/src/rotate_cloud.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

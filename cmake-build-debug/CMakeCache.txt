@@ -471,6 +471,15 @@ flann_DIR:PATH=flann_DIR-NOTFOUND
 //The directory containing a CMake configuration file for k4a.
 k4a_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/k4a
 
+//The directory containing a CMake configuration file for k.
+k_DIR:PATH=k_DIR-NOTFOUND
+
+//The directory containing a CMake configuration file for ki.
+ki_DIR:PATH=ki_DIR-NOTFOUND
+
+//The directory containing a CMake configuration file for kinect.
+kinect_DIR:PATH=kinect_DIR-NOTFOUND
+
 //Path to a file.
 libusb_INCLUDE_DIR:PATH=/usr/include
 
