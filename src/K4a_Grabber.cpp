@@ -182,15 +182,6 @@ void K4a_Grabber::KinectAzureDK_Source_Grabber(k4a::image &colorImage_k4a, k4a::
         if(infraredImage_k4a == nullptr)
             printf("Failed To Get IR Image From Kinect!\n");
 
-        k4a::device device = k4a::device::open(K4A_DEVICE_DEFAULT);
-
-        k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
-        k4a::calibration Calibration = device.get_calibration(config.depth_mode, config.color_resolution);
-        k4a::transformation Transformation = k4a::transformation(Calibration);
-        k4a::image transformed_depth_image = nullptr;
-        transformed_depth_image = Transformation.depth_image_to_color_camera(depthImage_k4a);
-        colorImage_k4a = transformed_depth_image;
-
     }
 }
 
@@ -210,31 +201,27 @@ std::vector<cv::Mat> K4a_Grabber::getImg(uint8_t timeout_ms, k4a::image &depthIm
     k4a::image colorImage_k4a = nullptr, infraredImage_k4a = nullptr;
     KinectAzureDK_Source_Grabber(colorImage_k4a, depthImage_k4a, infraredImage_k4a, timeout_ms, Img);
 
-//    for(int i = 0; i < depthImage_k4a.get_width_pixels(); i++)
-//    {
-//        for(int j = 0; j < depthImage_k4a.get_height_pixels(); j++)
-//        {
-//            uint16_t depth = depthImage_k4a.get_buffer()[i * depthImage_k4a.get_height_pixels() + j];
-//            printf("depth: %d\n", depth);
-//        }
-//    }
+    /*深度图和彩色图配准*/
+    k4a::transformation transformation = k4a::transformation(calibration);
+	
     // 数据格式转换
     if(colorImage_k4a != nullptr)
     {
-        colorImage_ocv = cv::Mat(colorImage_k4a.get_height_pixels(), colorImage_k4a.get_width_pixels(), CV_8UC4, colorImage_k4a.get_buffer());
+        colorImage_ocv = cv::Mat(colorImage_k4a.get_height_pixels(), colorImage_k4a.get_width_pixels(), CV_8UC4, (void *)colorImage_k4a.get_buffer());
         cvtColor(colorImage_ocv, colorImage_ocv, cv::COLOR_BGRA2BGR); // 从四通道转到三通道
     }
 
     if(depthImage_k4a != nullptr)
     {
-        depthImage_ocv = cv::Mat(depthImage_k4a.get_height_pixels(), depthImage_k4a.get_width_pixels(), CV_8UC4, depthImage_k4a.get_buffer());
-        depthImage_ocv.convertTo(depthImage_ocv, CV_16U, 1);
+	k4a::image transformed_depth_image = transformation.depth_image_to_color_camera(depthImage_k4a);
+        depthImage_ocv = cv::Mat(depthImage_k4a.get_height_pixels(), depthImage_k4a.get_width_pixels(), CV_16U, (void *)depthImage_k4a.get_buffer());
+        depthImage_ocv.convertTo(depthImage_ocv, CV_8U, 1);
 
     }
 
     if(infraredImage_k4a != nullptr)
     {
-        infraredImage_ocv = cv::Mat(infraredImage_k4a.get_height_pixels(), infraredImage_k4a.get_width_pixels(), CV_8UC4, infraredImage_k4a.get_buffer());
+        infraredImage_ocv = cv::Mat(infraredImage_k4a.get_height_pixels(), infraredImage_k4a.get_width_pixels(), CV_16U, (void *)infraredImage_k4a.get_buffer());
         infraredImage_ocv.convertTo(infraredImage_ocv, CV_8U, 1);
     }
 
