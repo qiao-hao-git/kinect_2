@@ -74,7 +74,7 @@ int main()
         {
             imshow("RGB",colorImage_ocv);
         }
-//        if(depthImage_ocv.cols * depthImage_ocv.rows != 0)imshow("Depth",depthImage_ocv);
+        if(depthImage_ocv.cols * depthImage_ocv.rows != 0)imshow("Depth",depthImage_ocv);
 //        if(infraredImage_ocv.cols * infraredImage_ocv.rows != 0) imshow("Ir",infraredImage_ocv);
 
         waitKey(30);
