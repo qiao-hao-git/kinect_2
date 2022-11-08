@@ -322,15 +322,15 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr Kinect_Rotate_Cloud::DepthToCloud(const k
 //            p.g = rgb.ptr<uchar>(v)[u * 3 + 1];
 //            p.r = rgb.ptr<uchar>(v)[u * 3 + 2];
             double z = (double)d / 1000.0;
-            if(z > 0) std::cout << "z = " << z << std::endl;
+            if(z > 0) std::cout << "z = " << z << "m" << std::endl;
             double x = (p.x - intrinsic_parameter[0].cx) * z / intrinsic_parameter[0].fx;
-            if(x != 0) std::cout << "x = " << x << std::endl;
+            if(x != 0) std::cout << "x = " << x << "m" << std::endl;
             double y = (p.y - intrinsic_parameter[0].cy) * z / intrinsic_parameter[0].fy;
             if(y != 0)
-                std::cout << "y = " << y << std::endl;
+                std::cout << "y = " << y << "m" << std::endl;
             float distance = sqrt(pow(x,2) + pow(y,2) + pow(z, 2));
             if (distance > 0) {
-                std::cout << "distance: " << distance << "mm" << std::endl;
+                std::cout << "distance: " << distance << "m" << std::endl;
             }
 //            distances[u][v] = distance;//计算点云中每个点到相机的距离
 //            std::cout << distances[u][v] << std::endl;
