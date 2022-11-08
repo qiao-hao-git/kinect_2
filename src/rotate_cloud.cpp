@@ -4,28 +4,6 @@
 #include <rotate_cloud.hpp>
 
 
-//#define CV_EVENT_MOUSEMOVE 0             //滑动
-//#define CV_EVENT_LBUTTONDOWN 1           //左键点击
-//#define CV_EVENT_RBUTTONDOWN 2           //右键点击
-//#define CV_EVENT_MBUTTONDOWN 3           //中键点击
-//#define CV_EVENT_LBUTTONUP 4             //左键放开
-//#define CV_EVENT_RBUTTONUP 5             //右键放开
-//#define CV_EVENT_MBUTTONUP 6             //中键放开
-//#define CV_EVENT_LBUTTONDBLCLK 7         //左键双击
-//#define CV_EVENT_RBUTTONDBLCLK 8         //右键双击
-//#define CV_EVENT_MBUTTONDBLCLK 9         //中键双击
-//std::vector<std::vector<float>> distances;
-
-//void setMouseCallback(const std::string& winname, cv::MouseCallback onMouse, void* userdata = 0);
-//
-//void on_Mouse(int event, int x, int y, int flags, void*) {
-//    if (event == CV_EVENT_MOUSEMOVE){
-//        //鼠标移动将会触发此事件，CV_EVENT_MOUSEMOVE和0等效
-////        cout << "x:"<<x << "y："<< y << endl;//鼠标在图片每移动一次就会输出一次坐标
-//        std::cout << distances[x][y] << std::endl;
-//    }
-//
-//}
 /**
  * 去除地面后，旋转坐标系，从相机坐标转为世界坐标
  * @param cloud2 需要旋转的点云
@@ -329,8 +307,8 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr Kinect_Rotate_Cloud::DepthToCloud(const k
 //            pcl::PointXYZRGB p;
             /*获取每个像素点的深度*/
             ushort d = depth_image.at<ushort>(p.y, p.x);
-////            uint16_t d = depth.get_buffer()[v * depth.get_stride_bytes() / sizeof(uint16_t) + u];
-//////            std::cout << "d = " << d << std::endl;
+
+//            std::cout << "d = " << d << std::endl;
 
         /*将深度图转为世界坐标*/
 //            p.z = d ;
@@ -355,12 +333,11 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr Kinect_Rotate_Cloud::DepthToCloud(const k
                 std::cout << "distance: " << distance << "mm" << std::endl;
             }
 //            distances[u][v] = distance;//计算点云中每个点到相机的距离
-////            std::cout << distances[u][v] << std::endl;
+//            std::cout << distances[u][v] << std::endl;
 //            cloud->points.push_back(p);
 //        }
 //    }
-//    std::cout << "distances: " << distances[p.y][p.x] << std::endl;
-//    cv::setMouseCallback("RGB", on_Mouse, 0);
+
     cloud->width = cloud->size();
     cloud->height = 1;
     cloud->is_dense = false;
