@@ -1,7 +1,7 @@
 #include "K4a_Grabber.hpp"
 #include "rotate_cloud.hpp"
-#include <opencv2/opencv.hpp>
 
+#include <opencv2/opencv.hpp>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/point_cloud.h>
@@ -13,7 +13,27 @@
 #include <unistd.h>
 
 #include <iostream>
+#define CV_EVENT_MOUSEMOVE 0             //滑动
+#define CV_EVENT_LBUTTONDOWN 1           //左键点击
+#define CV_EVENT_RBUTTONDOWN 2           //右键点击
+#define CV_EVENT_MBUTTONDOWN 3           //中键点击
+#define CV_EVENT_LBUTTONUP 4             //左键放开
+#define CV_EVENT_RBUTTONUP 5             //右键放开
+#define CV_EVENT_MBUTTONUP 6             //中键放开
+#define CV_EVENT_LBUTTONDBLCLK 7         //左键双击
+#define CV_EVENT_RBUTTONDBLCLK 8         //右键双击
+#define CV_EVENT_MBUTTONDBLCLK 9         //中键双击
 
+K4a_Grabber Kinect;
+Kinect_Rotate_Cloud Kinect_Rotate;
+cv::Mat colorImage_ocv, depthImage_ocv, infraredImage_ocv;
+cv::Point p;
+
+void on_MouseHandle(int event, int x, int y, int flags, void* param) {
+    p.x = x;
+    p.y = y;
+    Kinect_Rotate.DepthToCloud(Kinect.depth_image, colorImage_ocv, p);
+}
 
 using namespace std;
 using namespace cv;
@@ -34,13 +54,14 @@ pthread_mutex_t mutex_show = PTHREAD_MUTEX_INITIALIZER; // 互斥锁
 pthread_t id_thread_show;
 void* thread_show(void *arg);
 
+
+
 int main()
 {
     // Ctrl C 中断
     signal(SIGINT, ctrlc);
 
-    K4a_Grabber Kinect;
-    Kinect_Rotate_Cloud Kinect_Rotate;
+
 
     Kinect.init();
     Kinect.setCamera();
@@ -63,18 +84,20 @@ int main()
         gettimeofday(&tt2, NULL);
         double diff_ms = 1e3 * (tt2.tv_sec - tt1.tv_sec) + (tt2.tv_usec - tt1.tv_usec) / 1000.0;
 //        printf("total diff time1 %lf\n",diff_ms);
-        cv::Mat colorImage_ocv = pictures[0], depthImage_ocv = pictures[1], infraredImage_ocv = pictures[2];
+        colorImage_ocv = pictures[0], depthImage_ocv = pictures[1], infraredImage_ocv = pictures[2];
+//        std::cout << "colorImage_ocv: " << colorImage_ocv.rows << " " << colorImage_ocv.cols << std::endl;
+//        std::cout << "depthImage_ocv: " << depthImage_ocv.rows << " " << depthImage_ocv.cols << std::endl;
 
 //        for(int i = 0; i < depthImage_ocv.rows; i++){
 //            for(int j = 0; j < depthImage_ocv.cols; j++){
-//                std::cout << depthImage_ocv.at<ushort>(i, j) << std::endl;
+//                if(depthImage_ocv.at<ushort>(i, j) > 0)
+//                    std::cout << depthImage_ocv.at<ushort>(i, j) / 64 << std::endl;
 //            }
 //        }
-        if(colorImage_ocv.cols * colorImage_ocv.rows != 0)
-        {
-            imshow("RGB",colorImage_ocv);
-        }
-        if(depthImage_ocv.cols * depthImage_ocv.rows != 0)imshow("Depth",depthImage_ocv);
+        cv::namedWindow("RGB");//创建窗口
+        cv::setMouseCallback("RGB", on_MouseHandle);
+        if(colorImage_ocv.cols * colorImage_ocv.rows != 0) imshow("RGB",colorImage_ocv);
+        if(depthImage_ocv.cols * depthImage_ocv.rows != 0) imshow("Depth",depthImage_ocv);
 //        if(infraredImage_ocv.cols * infraredImage_ocv.rows != 0) imshow("Ir",infraredImage_ocv);
 
         waitKey(30);
@@ -87,9 +110,9 @@ int main()
         Eigen::Vector3f normal(0.0, 0.0, 1.0);
 
 //        PointCloud<pcl::PointXYZRGB>::Ptr cloud = Kinect.getPointXYZRGB();
-        PointCloud<pcl::PointXYZRGB>::Ptr cloud = Kinect_Rotate.DepthToCloud(Kinect.depth_image, colorImage_ocv);
+
 //        PointCloud<PointXYZRGB>::Ptr cloud = Kinect.getPointXYZRGB();
-        Kinect_Rotate.rotate_cloud(cloud, normal);
+//        Kinect_Rotate.rotate_cloud(cloud, normal);
 //        Kinect_Rotate_Cloud::block src = Kinect_Rotate.CloudToImage(cloud);
 //        cv::Mat image = src.image;
 //        imshow("image", image);
@@ -101,9 +124,9 @@ int main()
 
 //        cout << "Size " << cloud->points.size() << endl;
 
-        pthread_mutex_lock(&mutex_show);
-        pcl::copyPointCloud(*cloud, *cloud_rgb_show);
-        pthread_mutex_unlock(&mutex_show);
+//        pthread_mutex_lock(&mutex_show);
+//        pcl::copyPointCloud(*cloud, *cloud_rgb_show);
+//        pthread_mutex_unlock(&mutex_show);
     }
 
     Kinect.close();
