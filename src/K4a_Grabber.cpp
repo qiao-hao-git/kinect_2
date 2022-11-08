@@ -28,8 +28,8 @@ void K4a_Grabber::init()
     // 设置Kinect的相机帧率为30FPS
     init_params.camera_fps = K4A_FRAMES_PER_SECOND_30;
     // 设置Kinect的深度模式为Near FOV unbinned（这一代 Kinect 支持多种深度模式，官方文档推荐使用 K4A_DEPTH_MODE_NFOV_UNBINNED 和 K4A_DEPTH_MODE_WFOV_2X2BINNED 这两种深度模式）
-//	init_params.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
-    init_params.depth_mode = K4A_DEPTH_MODE_WFOV_2X2BINNED;
+	init_params.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
+//    init_params.depth_mode = K4A_DEPTH_MODE_WFOV_2X2BINNED;
 
 	// 设置Kinect的颜色属性为BGRA32
 	init_params.color_format = K4A_IMAGE_FORMAT_COLOR_BGRA32;
@@ -74,7 +74,7 @@ void K4a_Grabber::close()
             kill_thread_capture = true;
             usleep(1e5);
         }
-            
+
         transformation.destroy();
         Kinect.stop_cameras();
         Kinect.close();
@@ -105,6 +105,7 @@ void K4a_Grabber::KinectAzureDK_Source_Grabber(k4a::image &colorImage_k4a, k4a::
 {
     // 清空变量
     colorImage_k4a = depthImage_k4a = infraredImage_k4a = nullptr;
+
 
     // 检测捕获线程是否在工作
     if(Thread_Capture_Working)
@@ -141,7 +142,9 @@ void K4a_Grabber::KinectAzureDK_Source_Grabber(k4a::image &colorImage_k4a, k4a::
             {
                 pthread_mutex_lock(&Raw_Kinect_Data_.mutex_k4a_image_t);
                 colorImage_k4a = k4a::image(Raw_Kinect_Data_.colorImage_k4a);
+
                 depthImage_k4a = k4a::image(Raw_Kinect_Data_.depthImage_k4a);
+
                 infraredImage_k4a = k4a::image(Raw_Kinect_Data_.infraredImage_k4a);
                 *Used = true;
                 pthread_mutex_unlock(&Raw_Kinect_Data_.mutex_k4a_image_t);
@@ -182,6 +185,8 @@ void K4a_Grabber::KinectAzureDK_Source_Grabber(k4a::image &colorImage_k4a, k4a::
         if(infraredImage_k4a == nullptr)
             printf("Failed To Get IR Image From Kinect!\n");
 
+
+
     }
 }
 
@@ -203,18 +208,23 @@ std::vector<cv::Mat> K4a_Grabber::getImg(uint8_t timeout_ms, k4a::image &depthIm
 
     /*深度图和彩色图配准*/
     k4a::transformation transformation = k4a::transformation(calibration);
-	
+
     // 数据格式转换
     if(colorImage_k4a != nullptr)
     {
-        colorImage_ocv = cv::Mat(colorImage_k4a.get_height_pixels(), colorImage_k4a.get_width_pixels(), CV_8UC4, (void *)colorImage_k4a.get_buffer());
+        k4a::image colorImage_k4a_transformed = transformation.color_image_to_depth_camera(depthImage_k4a, colorImage_k4a);
+        colorImage_ocv = cv::Mat(colorImage_k4a_transformed.get_height_pixels(), colorImage_k4a_transformed.get_width_pixels(), CV_8UC4, (void *)colorImage_k4a_transformed.get_buffer());
+//        colorImage_ocv = cv::Mat(colorImage_k4a.get_height_pixels(), colorImage_k4a.get_width_pixels(), CV_8UC4, (void *)colorImage_k4a.get_buffer());
         cvtColor(colorImage_ocv, colorImage_ocv, cv::COLOR_BGRA2BGR); // 从四通道转到三通道
+
     }
 
     if(depthImage_k4a != nullptr)
     {
-	k4a::image transformed_depth_image = transformation.depth_image_to_color_camera(depthImage_k4a);
-        depthImage_ocv = cv::Mat(depthImage_k4a.get_height_pixels(), depthImage_k4a.get_width_pixels(), CV_16U, (void *)depthImage_k4a.get_buffer());
+//        k4a::image transformed_depth_image = transformation.depth_image_to_color_camera(depthImage_k4a);
+//
+//        depthImage_ocv = cv::Mat(transformed_depth_image.get_height_pixels(), transformed_depth_image.get_width_pixels(), CV_16UC1, (void *)transformed_depth_image.get_buffer());
+        depthImage_ocv = cv::Mat(depthImage_k4a.get_height_pixels(), depthImage_k4a.get_width_pixels(), CV_16UC1, (void *)depthImage_k4a.get_buffer());
         depthImage_ocv.convertTo(depthImage_ocv, CV_8U, 1);
 
     }
