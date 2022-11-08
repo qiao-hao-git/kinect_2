@@ -314,40 +314,52 @@ Kinect_Rotate_Cloud::block Kinect_Rotate_Cloud::CloudToImage(const pcl::PointClo
 }
 
 /*深度图转世界坐标*/
-pcl::PointCloud<pcl::PointXYZRGB>::Ptr Kinect_Rotate_Cloud::DepthToCloud(const k4a::image &depth, const cv::Mat &rgb)
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr Kinect_Rotate_Cloud::DepthToCloud(const k4a::image &depth, const cv::Mat &rgb,cv::Point p)
 {
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 //    std::vector<std::vector<float> > distances;
     cv::Mat depth_image = cv::Mat(depth.get_height_pixels(), depth.get_width_pixels(), CV_16U, (void *)depth.get_buffer());
-    for(int v = 0; v < depth.get_height_pixels(); v++)
-    {
-        for(int u = 0; u < depth.get_width_pixels(); u++)
-        {
-            pcl::PointXYZRGB p;
+    int width = depth_image.cols;
+    int height = depth_image.rows;
+//    std::cout << width << " " << height << std::endl;
+//    for(int v = 0; v < depth.get_height_pixels(); v++)
+//    {
+//        for(int u = 0; u < depth.get_width_pixels(); u++)
+//        {
+//            pcl::PointXYZRGB p;
+            /*获取每个像素点的深度*/
+            ushort d = depth_image.at<ushort>(p.y, p.x);
+////            uint16_t d = depth.get_buffer()[v * depth.get_stride_bytes() / sizeof(uint16_t) + u];
+//////            std::cout << "d = " << d << std::endl;
 
-            float d = depth_image.at<ushort>(v, u);
-//            uint16_t d = depth.get_buffer()[v * depth.get_stride_bytes() / sizeof(uint16_t) + u];
-//            std::cout << "d = " << d << std::endl;
-            if(d == 0) continue;
-
-            p.z = d ;
-            std::cout << "p.z = " << p.z << std::endl;
-            p.x = (u - intrinsic_parameter[0].cx) * p.z / intrinsic_parameter[0].fx;
-            p.y = (v - intrinsic_parameter[0].cy) * p.z / intrinsic_parameter[0].fy;
+        /*将深度图转为世界坐标*/
+//            p.z = d ;
+//         std::cout << "p.z = " << p.z << std::endl;
+//            p.x = (u - intrinsic_parameter[0].cx) * p.z / intrinsic_parameter[0].fx;
+//            p.y = (v - intrinsic_parameter[0].cy) * p.z / intrinsic_parameter[0].fy;
 //            std::cout << "p.x = " << p.x << std::endl;
 //            std::cout << "p.y = " << p.y << std::endl;
 
-            p.b = rgb.ptr<uchar>(u)[v * 3];
-            p.g = rgb.ptr<uchar>(u)[v * 3 + 1];
-            p.r = rgb.ptr<uchar>(u)[v * 3 + 2];
-//            float distance = sqrt(pow(p.x,2) + pow(p.y,2) + pow(p.z,2));
-//            if (distance > 0) {
-//                std::cout << "distance: " << distance << std::endl;
-//            }
-//            distances[u][v] = distance;  //计算点云中每个点到相机的距离
-            cloud->points.push_back(p);
-        }
-    }
+//            p.b = rgb.ptr<uchar>(v)[u * 3];
+//            p.g = rgb.ptr<uchar>(v)[u * 3 + 1];
+//            p.r = rgb.ptr<uchar>(v)[u * 3 + 2];
+            double z = (double)d / 1000.0;
+            if(z > 0) std::cout << "z = " << z << std::endl;
+            double x = (p.x - intrinsic_parameter[0].cx) * z / intrinsic_parameter[0].fx;
+            if(x != 0) std::cout << "x = " << x << std::endl;
+            double y = (p.y - intrinsic_parameter[0].cy) * z / intrinsic_parameter[0].fy;
+            if(y != 0)
+                std::cout << "y = " << y << std::endl;
+            float distance = sqrt(pow(x,2) + pow(y,2) + pow(z, 2));
+            if (distance > 0) {
+                std::cout << "distance: " << distance << "mm" << std::endl;
+            }
+//            distances[u][v] = distance;//计算点云中每个点到相机的距离
+////            std::cout << distances[u][v] << std::endl;
+//            cloud->points.push_back(p);
+//        }
+//    }
+//    std::cout << "distances: " << distances[p.y][p.x] << std::endl;
 //    cv::setMouseCallback("RGB", on_Mouse, 0);
     cloud->width = cloud->size();
     cloud->height = 1;
